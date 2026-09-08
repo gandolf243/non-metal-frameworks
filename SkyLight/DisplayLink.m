@@ -5,7 +5,10 @@
 // otherwise crashes with assertions on structOut members
 char** SLSDisplayGetTiming(char** rdi_structOut,unsigned long rsi,unsigned int edi_screenID)
 {
-	*rdi_structOut=NULL;
+	if (!rdi_structOut)
+    	return NULL;
+
+	*rdi_structOut = NULL;
 	return rdi_structOut;
 }
 

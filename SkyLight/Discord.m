@@ -31,7 +31,7 @@ BOOL fake_avc(int count,int* versions)
 		int minor=(versions[1]>>8)&0xff;
 		int subminor=versions[1]&0xff;
 		
-		if(major>10||minor>13)
+		if (major > 10 || (major == 10 && minor > 13))
 		{
 			trace(@"Discord screenshare hack: lying about %d.%d.%d",major,minor,subminor);
 			return false;

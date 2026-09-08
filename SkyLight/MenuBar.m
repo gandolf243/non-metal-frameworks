@@ -226,9 +226,8 @@ dispatch_block_t SLSCopyCoordinatedDistributedNotificationContinuationBlock()
 	}
 	
 	// TODO: ownership?
-	return ^()
-	{
-	};
+	return Block_copy(^{
+	});
 }
 
 // custom background colors
