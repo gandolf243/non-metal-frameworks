@@ -22,12 +22,19 @@ void fake_setScale(id self,SEL selector,double value)
 {
 	value=MAX(value,1.0);
 	
-	real_setScale(self,selector,value);
+	if(real_setScale)
+	{
+		real_setScale(self,selector,value);
+	}
 }
 
 void blurScaleHack()
 {
-	swizzleImp(@"CABackdropLayer",@"setScale:",true,(IMP)fake_setScale,(IMP*)&real_setScale);
+	Class backdropClass=NSClassFromString(@"CABackdropLayer");
+	if(backdropClass && [backdropClass instancesRespondToSelector:@selector(setScale:)])
+	{
+		swizzleImp(@"CABackdropLayer",@"setScale:",true,(IMP)fake_setScale,(IMP*)&real_setScale);
+	}
 }
 
 void miscSetup()

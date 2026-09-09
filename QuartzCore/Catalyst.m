@@ -13,26 +13,42 @@ BOOL fake_addCommitHandler(CATransaction* self,SEL sel,void* rdx_block,int ecx_p
 	return true;
 }
 
-#ifndef CAT
-
 // fix upside-down AppKit layers in UIKit apps
 
 int* getLayerFlags(CALayer* layer)
 {
+	if(!layer)
+	{
+		return NULL;
+	}
 	char* layerC=*(char**)(((char*)layer)+0x10);
+	if(!layerC)
+	{
+		return NULL;
+	}
 	return (int*)(layerC+0x4);
 }
 
 void (*real_setLayer)(NSObject*,SEL,CALayer*);
 void fake_setLayer(NSObject* self,SEL sel,CALayer* layer)
 {
-	NSDictionary* options=[self options];
-	if(((NSNumber*)options[kCAContextReversesContentsAreFlippedInCatalystEnvironment]).boolValue)
+	if([self respondsToSelector:@selector(options)])
 	{
-		*getLayerFlags(layer)|=0x400000;
+		NSDictionary* options=[self performSelector:@selector(options)];
+		if(options && ((NSNumber*)options[kCAContextReversesContentsAreFlippedInCatalystEnvironment]).boolValue)
+		{
+			int* flags = getLayerFlags(layer);
+			if(flags)
+			{
+				*flags |= 0x400000;
+			}
+		}
 	}
 	
-	real_setLayer(self,sel,layer);
+	if(real_setLayer)
+	{
+		real_setLayer(self,sel,layer);
+	}
 }
 
 // fix crashes due to CALayer.delegate being released prematurely
@@ -64,11 +80,15 @@ void setDelegateWasRetained(NSObject* delegate,BOOL flag)
 }
 void releaseLayerDelegateIfNecessary(CALayer* layer)
 {
+	if(!layer)
+	{
+		return;
+	}
 	NSObject* delegate=[layer delegate];
 	if(delegateWasRetained(delegate))
 	{
 		setDelegateWasRetained(delegate,false);
-		delegate.release;
+		[delegate release];
 	}
 }
 
@@ -78,8 +98,11 @@ void releaseLayerDelegateIfNecessary(CALayer* layer)
 {
 	[self setDelegate:rdx];
 	
-	rdx.retain;
-	setDelegateWasRetained(rdx,true);
+	if(rdx)
+	{
+		[rdx retain];
+		setDelegateWasRetained(rdx,true);
+	}
 }
 
 -(NSObject*)unsafeUnretainedDelegate
@@ -94,7 +117,10 @@ void fake_setDelegate(CALayer* self,SEL sel,NSObject* delegate)
 {
 	releaseLayerDelegateIfNecessary(self);
 	
-	real_setDelegate(self,sel,delegate);
+	if(real_setDelegate)
+	{
+		real_setDelegate(self,sel,delegate);
+	}
 }
 
 void (*real_dealloc)(CALayer*,SEL);
@@ -102,16 +128,16 @@ void fake_dealloc(CALayer* self,SEL sel)
 {
 	releaseLayerDelegateIfNecessary(self);
 	
-	real_dealloc(self,sel);
+	if(real_dealloc)
+	{
+		real_dealloc(self,sel);
+	}
 }
-
-#endif
 
 void catalystSetup()
 {
 	swizzleImp(@"CATransaction",@"addCommitHandler:forPhase:",false,(IMP)fake_addCommitHandler,(IMP*)&real_addCommitHandler);
 	
-#ifndef CAT
 	swizzleImp(@"CALayer",@"setDelegate:",true,(IMP)fake_setDelegate,(IMP*)&real_setDelegate);
 	swizzleImp(@"CALayer",@"dealloc",true,(IMP)fake_dealloc,(IMP*)&real_dealloc);
 	
@@ -119,5 +145,4 @@ void catalystSetup()
 	{
 		swizzleImp(@"CAContextImpl",@"setLayer:",true,(IMP)fake_setLayer,(IMP*)&real_setLayer);
 	}
-#endif
 }
