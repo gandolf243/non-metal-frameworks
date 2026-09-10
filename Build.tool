@@ -27,6 +27,8 @@ function build
 	cp "$oldIn" "$oldOut"
 	install_name_tool -id "$oldInstall" "$oldOut"
 	
+	mainIn="$prefixOut/${name}Wrapper.m"
+
 	jsonHack=""
 	if [ -f "${newIn}.json" ]; then
 		jsonHack="${newIn}.json"
