@@ -1,5 +1,6 @@
 // work around lifecycle issues (can't quit, 1200 second crash)
 
+extern NSString *kCAContextReversesContentsAreFlippedInCatalystEnvironment;
 BOOL (*real_addCommitHandler)(CATransaction*,SEL,void*,int);
 BOOL fake_addCommitHandler(CATransaction* self,SEL sel,void* rdx_block,int ecx_phase)
 {
