@@ -27,9 +27,12 @@ function build
 	cp "$oldIn" "$oldOut"
 	install_name_tool -id "$oldInstall" "$oldOut"
 	
-	mainIn="$prefixOut/${name}Wrapper.m"
+	jsonHack=""
+	if [ -f "${newIn}.json" ]; then
+		jsonHack="${newIn}.json"
+	fi
 
-	Stubber "$oldIn" "$newIn" "$PWD" "$mainIn"
+	Stubber "$oldIn" "$newIn" "$PWD" "$mainIn" $jsonHack
 
 	current="$(otool -l "$newIn" | grep -m 1 'current version' | cut -d ' ' -f 9)"
 	compatibility="$(otool -l "$newIn" | grep -m 1 'compatibility version' | cut -d ' ' -f 3)"
